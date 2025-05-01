@@ -28,4 +28,34 @@ const registerUser=async(req,res)=>{
   }
 }
 
-module.exports={registerUser};
+const loginUser=async(req,res)=>{
+  try {
+    const {email,password}=req.body;
+    if( !email || !password){
+      return res.status(400);
+    };
+    const user=await User.findOne({email});
+
+    if(!user){
+      return res.status(400).json({message:"Invalid credentials"});
+    }
+
+    const isMatch=await bcrypt.compare(password,user.password);
+
+    if(!isMatch){
+      return res.status(400).json({message:"Invalid credentials"});
+    }
+
+    const token=await jwt.sign({
+      userId:user.id,
+      email:user.email
+    },process.env.JWT_SECRET);
+
+    res.status(200).json({token, email:user.email})
+    
+  } catch (error) {
+    res.status(400).json({message:"Something went wrong"});
+  }
+}
+
+module.exports={registerUser,loginUser};
